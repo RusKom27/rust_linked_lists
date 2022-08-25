@@ -51,6 +51,8 @@ impl<T> List<T> {
         })
     }
 
+
+
     pub fn into_iter(self) -> IntoIter<T> {
         IntoIter(self)
     }
@@ -65,6 +67,36 @@ impl<T> List<T> {
         IterMut {
             next: self.head.as_deref_mut(),
         }
+    }
+
+    pub fn len(&self) -> i32 {
+        let mut iter = self.iter();
+        let mut len = 0;
+        loop {
+            match iter.next() {
+                Some(_) => len += 1,
+                None => break,
+            }
+        }
+        len
+    }
+    pub fn get(&self, index: u32) -> Option<&T> {
+        let mut iter = self.iter();
+        let negative_index:i32 = match self.len() - index as i32 - 1 {
+            num if num < 0 && num > self.len() - 1 => return None,
+            num => num,
+        };
+        for i in 0..=negative_index {
+            match iter.next() {
+                Some(elem) => {
+                    if negative_index == i {
+                        return Some(elem);
+                    }
+                },
+                _ => continue
+            };
+        }
+        None
     }
 }
 
@@ -105,11 +137,13 @@ impl<T> Drop for List<T> {
             cur_link = boxed_node.next.take();
         }
     }
+
 }
 
 
 mod test {
     use super::List;
+
     #[test]
     fn basics() {
         let mut list = List::new();
@@ -141,6 +175,32 @@ mod test {
 
         drop(list);
     }
+
+    #[test]
+    fn len() {
+        let mut list = List::new();
+        list.push(1);
+        list.push(2);
+        list.push(3);
+        assert_eq!(list.len(), 3);
+
+        list.pop();
+        assert_eq!(list.len(), 2);
+    }
+
+    #[test]
+    fn get() {
+        let mut list = List::new();
+        list.push(1);
+        list.push(2);
+        list.push(3);
+        list.push(4);
+        assert_eq!(list.get(2), Some(&3));
+        assert_eq!(list.get(1), Some(&2));
+        assert_eq!(list.get(0), Some(&1));
+        assert_eq!(list.get(4), None);
+    }
+
     #[test]
     fn into_iter() {
         let mut list = List::new();
@@ -176,6 +236,7 @@ mod test {
         list.push(3);
 
         let mut iter = list.iter_mut();
+
         assert_eq!(iter.next(), Some(&mut 3));
         assert_eq!(iter.next(), Some(&mut 2));
         assert_eq!(iter.next(), Some(&mut 1));
